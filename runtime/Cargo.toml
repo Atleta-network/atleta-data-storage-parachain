@@ -1,6 +1,6 @@
 [package]
-name = "parachain-template-runtime"
-description = "A parachain runtime template built with Substrate and Cumulus, part of Polkadot Sdk."
+name = "data-storage-runtime"
+description = "Atleta data storage parachain runtime"
 version = "0.0.0"
 license = "MIT-0"
 authors.workspace = true
