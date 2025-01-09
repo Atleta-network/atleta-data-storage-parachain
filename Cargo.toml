@@ -2,7 +2,6 @@
 members = [
     "node",
     "runtime",
-    "pallets/*",
 ]
 resolver = "2"
 
@@ -120,12 +119,3 @@ cumulus-primitives-storage-weight-reclaim = { git = "https://github.com/atleta-n
 pallet-collator-selection = { git = "https://github.com/atleta-network/polkadot-sdk", branch = "atleta-polkadot-v1.11.0", default-features = false }
 parachains-common = { git = "https://github.com/atleta-network/polkadot-sdk", branch = "atleta-polkadot-v1.11.0", default-features = false }
 parachain-info = { package = "staging-parachain-info", git = "https://github.com/atleta-network/polkadot-sdk", branch = "atleta-polkadot-v1.11.0", default-features = false }
-
-# Frontier Primitive
-fp-account = { git = "https://github.com/atleta-network/frontier", branch = "atleta-polkadot-v1.11.0", default-features = false }
-# fp-consensus = { git = "https://github.com/atleta-network/frontier", branch = "atleta-polkadot-v1.11.0", default-features = false }
-# fp-dynamic-fee = { git = "https://github.com/atleta-network/frontier", branch = "atleta-polkadot-v1.11.0", default-features = false }
-# fp-ethereum = { git = "https://github.com/atleta-network/frontier", branch = "atleta-polkadot-v1.11.0", default-features = false }
-fp-evm = { git = "https://github.com/atleta-network/frontier", branch = "atleta-polkadot-v1.11.0", default-features = false }
-fp-rpc = { git = "https://github.com/atleta-network/frontier", branch = "atleta-polkadot-v1.11.0", default-features = false }
-fp-self-contained = { git = "https://github.com/atleta-network/frontier", branch = "atleta-polkadot-v1.11.0", default-features = false }
