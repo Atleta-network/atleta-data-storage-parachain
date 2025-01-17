@@ -1,0 +1,35 @@
+[relaychain]
+default_command = "polkadot"
+chain = "/Users/dmitry/Rust/atleta/atleta-relay-raw.json"
+
+[[relaychain.nodes]]
+name = "alice"
+validator = true
+
+[[relaychain.nodes]]
+name = "bob"
+validator = true
+
+[parachain]
+cumulus_based = true
+
+[parachain.collator1]
+name = "collator1"
+command = "your-parachain-binary"
+args = ["-lparachain=debug"]
+
+[types.Header]
+number = "u64"
+parent_hash = "Hash"
+post_state = "Hash"
+
+[settings]
+timeout = 1000
+validator_ports = 30000
+
+# Enable HRMP channels
+[[hrmp_channels]]
+sender = 1000
+recipient = 2000
+max_capacity = 8
+max_message_size = 512 
