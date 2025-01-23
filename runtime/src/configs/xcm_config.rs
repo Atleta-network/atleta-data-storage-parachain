@@ -4,7 +4,7 @@ use crate::{
 };
 use frame_support::{
     parameter_types,
-    traits::{ConstU32, Contains, Everything, Nothing},
+    traits::{ConstU32, Everything, Nothing},
     weights::Weight,
 };
 use frame_system::EnsureRoot;
@@ -12,28 +12,23 @@ use pallet_xcm::XcmPassthrough;
 use polkadot_parachain_primitives::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
 use xcm::latest::prelude::*;
-// use xcm::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowKnownQueryResponses,
-    AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, DenyReserveTransferToRelayChain,
-    DenyThenTry, EnsureXcmOrigin, FixedWeightBounds, FrameTransactionalProcessor, FungibleAdapter,
-    IsConcrete, NativeAsset, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
+    AccountId32Aliases, AllowKnownQueryResponses,
+    AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom,
+    EnsureXcmOrigin, FixedWeightBounds, FrameTransactionalProcessor,
+    NativeAsset, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
     SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, TrailingSetTopicAsId, UsingComponents,
-    WithComputedOrigin, WithUniqueTopic,
+    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WithUniqueTopic,
 };
 use xcm_executor::{traits::TransactAsset, AssetsInHolding, XcmExecutor};
 
 parameter_types! {
     pub const RelayLocation: Location = Location::parent();
-    // pub const RelayNetwork: Option<NetworkId> = None;
-    pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
+    pub const RelayNetwork: Option<NetworkId> = None;
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-    // For the real deployment, it is recommended to set `RelayNetwork` according to the relay chain
-    // and prepend `UniversalLocation` with `GlobalConsensus(RelayNetwork::get())`.
-    // pub UniversalLocation: InteriorLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-    pub UniversalLocation: InteriorLocation =
-        [GlobalConsensus(RelayNetwork::get()), Parachain(ParachainInfo::parachain_id().into())].into();
+	// For the real deployment, it is recommended to set `RelayNetwork` according to the relay chain
+	// and prepend `UniversalLocation` with `GlobalConsensus(RelayNetwork::get())`.
+	pub UniversalLocation: InteriorLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 }
 
 /// Type for specifying how a `Location` can be converted into an `AccountId`. This is used
@@ -48,36 +43,22 @@ pub type LocationToAccountId = (
     AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
-/// Means for transacting assets on this chain.
-// pub type LocalAssetTransactor2 = FungibleAdapter<
-// 	// Use this currency:
-// 	Balances,
-// 	// Use this currency when it is a fungible asset matching the given location or name:
-// 	IsConcrete<RelayLocation>,
-// 	// Do a simple punn to convert an AccountId32 Location into a native chain account ID:
-// 	LocationToAccountId,
-// 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
-// 	AccountId,
-// 	// We don't track any teleports.
-// 	(),
-// >;
-
-pub struct AtlaAssetTransactor;
-impl TransactAsset for AtlaAssetTransactor {
+pub struct ParachainTransactor;
+impl TransactAsset for ParachainTransactor {
     fn deposit_asset(
         what: &Asset,
         who: &Location,
         _maybe_context: Option<&XcmContext>,
     ) -> XcmResult {
         log::trace!(
-            target: "xcm:AtlaAssetTransactor",
+            target: "xcm:ParachainTransactor",
             "deposit_asset: what: {:?}, who: {:?}",
             what.clone(), who.clone(),
         );
 
         if what.id.0 != Location::parent() {
             log::error!(
-                target: "xcm:AtlaAssetTransactor",
+                target: "xcm:ParachainTransactor",
                 "deposit_asset: Asset is not supported what: {:?}, who: {:?}",
                 what.clone(), who.clone(),
             );
@@ -107,7 +88,7 @@ impl TransactAsset for AtlaAssetTransactor {
             new_amount,
         ) else {
             log::error!(
-                target: "xcm:AtlaAssetTransactor",
+                target: "xcm:ParachainTransactor",
                 "deposit_asset: Balance Add Failed: amount: {:?}",
                 new_amount,
             );
@@ -122,14 +103,14 @@ impl TransactAsset for AtlaAssetTransactor {
         _maybe_context: Option<&XcmContext>,
     ) -> Result<AssetsInHolding, XcmError> {
         log::trace!(
-            target: "xcm:AtlaAssetTransactor",
+            target: "xcm:ParachainTransactor",
             "withdraw_asset: what: {:?}, who: {:?}",
             what.clone(), who.clone(),
         );
 
         if what.id.0 != Location::parent() {
             log::error!(
-                target: "xcm:AtlaAssetTransactor",
+                target: "xcm:ParachainTransactor",
                 "withdraw_asset: Asset is not supported what: {:?}, who: {:?}",
                 what.clone(), who.clone(),
             );
@@ -145,7 +126,7 @@ impl TransactAsset for AtlaAssetTransactor {
         let who: AccountId = match &who.interior {
             Junctions::X1(arc) => match arc.as_ref()[0] {
                 Junction::AccountId32 { id, .. } => id.into(),
-                _ => return Err(XcmError::FailedToTransactAsset("Invalid account format")),
+                _ => {return Err(XcmError::FailedToTransactAsset("Invalid account format"))},
             },
             _ => return Err(XcmError::FailedToTransactAsset("Invalid location format")),
         };
@@ -159,7 +140,7 @@ impl TransactAsset for AtlaAssetTransactor {
             new_amount,
         ) else {
             log::error!(
-                target: "xcm:AtlaAssetTransactor",
+                target: "xcm:ParachainTransactor",
                 "withdraw_asset: Balance Sub Failed: amount: {:?}",
                 new_amount,
             );
@@ -200,31 +181,6 @@ parameter_types! {
     pub const MaxAssetsIntoHolding: u32 = 64;
 }
 
-pub struct ParentOrParentsExecutivePlurality;
-impl Contains<Location> for ParentOrParentsExecutivePlurality {
-    fn contains(location: &Location) -> bool {
-        matches!(location.unpack(), (1, []) | (1, [Plurality { id: BodyId::Executive, .. }]))
-    }
-}
-
-// pub type Barrier = TrailingSetTopicAsId<
-// 	DenyThenTry<
-// 		DenyReserveTransferToRelayChain,
-// 		(
-// 			TakeWeightCredit,
-// 			WithComputedOrigin<
-// 				(
-// 					AllowTopLevelPaidExecutionFrom<Everything>,
-// 					AllowExplicitUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
-// 					// ^^^ Parent and its exec plurality get free execution
-// 				),
-// 				UniversalLocation,
-// 				ConstU32<8>,
-// 			>,
-// 		),
-// 	>,
-// >;
-
 pub type Barrier = (
     TakeWeightCredit,
     AllowTopLevelPaidExecutionFrom<Everything>,
@@ -239,7 +195,7 @@ impl xcm_executor::Config for XcmConfig {
     type RuntimeCall = RuntimeCall;
     type XcmSender = XcmRouter;
     // How to withdraw and deposit an asset.
-    type AssetTransactor = AtlaAssetTransactor;
+    type AssetTransactor = ParachainTransactor;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
     type IsReserve = NativeAsset;
     type IsTeleporter = Everything; // Teleporting is disabled.
@@ -258,12 +214,9 @@ impl xcm_executor::Config for XcmConfig {
     type AssetExchanger = ();
     type FeeManager = ();
     type MessageExporter = ();
-    // type UniversalAliases = Nothing;
     type UniversalAliases = ();
     type CallDispatcher = RuntimeCall;
-    // type SafeCallFilter = Everything;
     type SafeCallFilter = ();
-    // type Aliasers = Nothing;
     type Aliasers = ();
     type TransactionalProcessor = FrameTransactionalProcessor;
     type HrmpNewChannelOpenRequestHandler = ();
@@ -293,7 +246,6 @@ impl pallet_xcm::Config for Runtime {
     // Needs to be `Everything` for local testing.
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type XcmTeleportFilter = Nothing;
-    // type XcmTeleportFilter = Nothing;
     type XcmReserveTransferFilter = Nothing;
     type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
     type UniversalLocation = UniversalLocation;
