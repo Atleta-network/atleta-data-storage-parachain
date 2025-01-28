@@ -13,12 +13,12 @@ use polkadot_parachain_primitives::primitives::Sibling;
 use polkadot_runtime_common::impls::ToAuthor;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses,
-    AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom,
-    EnsureXcmOrigin, FixedWeightBounds, FrameTransactionalProcessor,
-    NativeAsset, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-    SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-    SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WithUniqueTopic,
+    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+    AllowTopLevelPaidExecutionFrom, EnsureXcmOrigin, FixedWeightBounds,
+    FrameTransactionalProcessor, NativeAsset, ParentIsPreset, RelayChainAsNative,
+    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+    WithUniqueTopic,
 };
 use xcm_executor::{traits::TransactAsset, AssetsInHolding, XcmExecutor};
 
@@ -26,9 +26,9 @@ parameter_types! {
     pub const RelayLocation: Location = Location::parent();
     pub const RelayNetwork: Option<NetworkId> = None;
     pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-	// For the real deployment, it is recommended to set `RelayNetwork` according to the relay chain
-	// and prepend `UniversalLocation` with `GlobalConsensus(RelayNetwork::get())`.
-	pub UniversalLocation: InteriorLocation = Parachain(ParachainInfo::parachain_id().into()).into();
+    // For the real deployment, it is recommended to set `RelayNetwork` according to the relay chain
+    // and prepend `UniversalLocation` with `GlobalConsensus(RelayNetwork::get())`.
+    pub UniversalLocation: InteriorLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 }
 
 /// Type for specifying how a `Location` can be converted into an `AccountId`. This is used
@@ -126,7 +126,7 @@ impl TransactAsset for ParachainTransactor {
         let who: AccountId = match &who.interior {
             Junctions::X1(arc) => match arc.as_ref()[0] {
                 Junction::AccountId32 { id, .. } => id.into(),
-                _ => {return Err(XcmError::FailedToTransactAsset("Invalid account format"))},
+                _ => return Err(XcmError::FailedToTransactAsset("Invalid account format")),
             },
             _ => return Err(XcmError::FailedToTransactAsset("Invalid location format")),
         };
@@ -145,7 +145,7 @@ impl TransactAsset for ParachainTransactor {
                 new_amount,
             );
             return Err(XcmError::FailedToTransactAsset("Balance Sub Failed"));
-		};
+        };
 
         let asset: Assets = (Parent, new_amount).into();
         Ok(asset.into())
