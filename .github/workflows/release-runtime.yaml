@@ -1,0 +1,54 @@
+name: "[Release] Runtime"
+
+on:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: wasm32-unknown-unknown
+          components: rust-src
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install protobuf-compiler jq
+
+      - name: Fetch
+        run: cargo fetch
+
+      - name: Build
+        run: cargo build --all --locked --release
+
+      - name: Define variables
+        id: define-variables
+        run: |
+          commit_sha=${{ github.sha }}
+          echo "commit_sha=${commit_sha:0:7}" >> "$GITHUB_OUTPUT"
+          echo "release_name=$(./target/release/data-storage-node runtime-version | jq '[.spec_name, .spec_version, .authoring_version, .state_version, .transaction_version, .apis_hash[:16]] | join("-")')" >> "$GITHUB_OUTPUT"
+
+      - uses: softprops/action-gh-release@v2
+        env:
+          release_name: ${{ steps.define-variables.outputs.release_name }}
+          commit_sha: ${{ steps.define-variables.outputs.commit_sha }}
+        with:
+          name: runtime-release-${{ env.release_name }}-${{ env.commit_sha }}
+          files: |
+            LICENSE
+            ./target/release/wbuild/data-storage-runtime/data_storage_runtime.wasm
+            ./target/release/wbuild/data-storage-runtime/data_storage_runtime.compact.wasm
+            ./target/release/wbuild/data-storage-runtime/data_storage_runtime.compact.compressed.wasm
