@@ -1,0 +1,116 @@
+name: "[Release] Binary (Linux & MacOS)"
+
+on:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    runs-on: self-hosted
+
+    outputs:
+      artifact: data-storage-node-${{ runner.os }}-${{ runner.arch }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: apt-get update && apt install protobuf-compiler libclang-dev libssl-dev -y
+
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: wasm32-unknown-unknown
+          components: rust-src
+
+      - name: Fetch
+        run: cargo fetch
+
+      - name: Build
+        run: cargo build --locked --release --allow warnings
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-storage-node-${{ runner.os }}-${{ runner.arch }}
+          path: ./target/release/data-storage-node
+          if-no-files-found: error
+
+  build-macos:
+    runs-on: macos-latest
+
+    needs: define-variables
+
+    outputs:
+      artifact: data-storage-node-${{ runner.os }}-${{ runner.arch }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew update
+          brew upgrade rustup
+          brew install protobuf
+
+      - name: Setup Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: wasm32-unknown-unknown
+          components: rust-src
+
+      - name: Fetch
+        run: cargo fetch
+
+      - name: Build
+        run: cargo build --locked --release --allow warnings
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: data-storage-node-${{ runner.os }}-${{ runner.arch }}
+          path: ./target/release/data-storage-node
+          if-no-files-found: error
+
+  publish:
+    runs-on: self-hosted
+
+    needs: [build-linux, build-macos]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set GitHub commit short SHA
+        run: echo "SHORT_SHA=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_ENV
+
+      - name: Set GitHub branch
+        run: echo "BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+
+      - name: Download Linux binary file
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build-linux.outputs.artifact }}
+          path: release/linux
+
+      - name: Download MacOS binary file
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build-macos.outputs.artifact }}
+          path: release/macos
+
+      - name: Publish
+        uses: softprops/action-gh-release@v2
+        with:
+          name: binary-release-${{ env.BRANCH }}-${{ env.SHORT_SHA }}
+          files: |
+            LICENSE
+            ./release/linux/${{ needs.build-linux.outputs.artifact }}
+            ./release/macos/${{ needs.build-macos.outputs.artifact }}

@@ -1,0 +1,43 @@
+name: "[Release] Docker"
+
+on:
+  workflow_dispatch:
+
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+  DOCKERHUB_REPOSITORY: ${{ vars.DOCKERHUB_REPOSITORY }}
+
+jobs:
+  build-and-push:
+    name: Build & Push
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set GitHub commit short SHA
+        run: echo "SHORT_SHA=$(git rev-parse --short ${{ github.sha }})" >> $GITHUB_ENV
+
+      - name: Set GitHub branch
+        run: echo "BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+
+      - name: Login to OVH (Harbor) private registry
+        run: |
+          docker login \
+            --username ${{ env.DOCKERHUB_USERNAME }} \
+            --password ${{ env.DOCKERHUB_PASSWORD }} \
+            docker.io
+
+      - name: Build Docker image(s)
+        run: |
+          docker build \
+            -t ${{ env.DOCKERHUB_REPOSITORY }}:${{ env.BRANCH }}-latest \
+            -t ${{ env.DOCKERHUB_REPOSITORY }}:${{ env.BRANCH }}-${{ env.SHORT_SHA } \
+            .
+
+      - name: Push Docker image(s)
+        run: |
+          docker push \
+            --all-tags \
+            ${{ env.DOCKERHUB_REPOSITORY }}
